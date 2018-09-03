@@ -4,7 +4,7 @@ function preload() {
 
     game.load.image('up', 'assets/up.png');
     game.load.image('down', 'assets/down.png');
-
+    game.load.audio('shave', 'assets/shave3.mp3');
 
 }
 
@@ -21,7 +21,16 @@ function create() {
     masked = game.make.bitmapData(800, 600);
     bmd.addToWorld();
 
+    shave = game.add.audio('shave');
+
+    // need to give mp3 time to decode
+    game.sound.setDecodedCallback([shave], start, this);
+
+}
+
+function start() {
     game.input.addMoveCallback(paint, this);
+    game.input.onDown.add(onTouch, this);
 }
 
 function paint(pointer, x, y) {
@@ -32,6 +41,10 @@ function paint(pointer, x, y) {
             }
         }
     }
+}
+
+function onTouch(pointer) {
+    shave.play();
 }
 
 function update () {
