@@ -1,16 +1,25 @@
 var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'phaser-example', { preload: preload, create: create, update: update });
+var shave_names = [];
+var shaves = [];
 
 function preload() {
 
     game.load.image('up', 'assets/up.png');
     game.load.image('down', 'assets/down.png');
-    game.load.audio('shave', 'assets/shave3.mp3');
+
+    for (var i = 1; i <= 6; i++){
+        let name = `shave${i}`
+        let path = `assets/audio/${name}.mp3`;
+        game.load.audio(name, path)
+        shave_names.push(name);
+    }
 
 }
 
 var bmd;
 var mask;
 var masked;
+var sound;
 
 function create() {
 
@@ -21,16 +30,19 @@ function create() {
     masked = game.make.bitmapData(800, 600);
     bmd.addToWorld();
 
-    shave = game.add.audio('shave');
+    for (var i = 0; i < shave_names.length; i++) {
+        shaves.push(game.add.audio(shave_names[i]));
+    }
 
     // need to give mp3 time to decode
-    game.sound.setDecodedCallback([shave], start, this);
+    game.sound.setDecodedCallback(shaves, start, this);
 
 }
 
 function start() {
     game.input.addMoveCallback(paint, this);
-    game.input.onDown.add(onTouch, this);
+    game.input.onDown.add(onDown, this);
+    game.input.onUp.add(onUp, this)
 }
 
 function paint(pointer, x, y) {
@@ -44,8 +56,17 @@ function paint(pointer, x, y) {
     }
 }
 
-function onTouch(pointer) {
-    shave.play();
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+function onDown(pointer) {
+    sound = getRandom(0, shaves.length);
+    shaves[sound].play();
+}
+
+function onUp(pointer) {
+    shaves[sound].stop();
 }
 
 function update () {
