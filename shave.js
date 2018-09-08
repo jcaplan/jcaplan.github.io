@@ -5,7 +5,22 @@ var game = new Phaser.Game(width, height, Phaser.CANVAS, 'phaser-example', { pre
 var shave_names = [];
 var shaves = [];
 
+WebFontConfig = {
+
+    //  'active' means all requested fonts have finished loading
+    //  We set a 1 second delay before calling 'createText'.
+    //  For some reason if we don't the browser cannot render the text the first time it's created.
+    active: function() { game.time.events.add(Phaser.Timer.SECOND, createText, this); },
+
+    //  The Google Fonts we want to load (specify as many as you like in the array)
+    google: {
+      families: ['Fontdiner Swanky']
+    }
+
+};
+
 function preload() {
+    game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
 
     game.load.image('background', 'assets/background.jpg');
     game.load.image('chair', 'assets/chair.png');
@@ -50,10 +65,9 @@ var ouch;
 var sheet_dirty = false;
 var x_thresh;
 var y_thresh;
+var intro = true;
 
 function create() {
-
-    game.stage.backgroundColor = '#2d2d2d';
 
     bmd = game.make.bitmapData(width, height);
     beard = game.make.bitmapData(width, height);
@@ -96,6 +110,38 @@ function create() {
 
 }
 
+function createText() {
+
+    text = game.add.text(game.world.centerX, game.world.centerY, "Please help\nme shave!!");
+    text.anchor.setTo(0.5);
+
+    text.font = 'Fontdiner Swanky';
+    text.fontSize = 60;
+
+    //  If we don't set the padding the font gets cut off
+    //  Comment out the line below to see the effect
+    text.padding.set(10, 16);
+
+    grd = text.context.createLinearGradient(0, 0, 0, text.canvas.height);
+    grd.addColorStop(0, '#BC0707');
+    grd.addColorStop(1, '#C66809');
+    text.fill = grd;
+
+    text.align = 'center';
+    text.stroke = '#000000';
+    text.strokeThickness = 2;
+    text.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
+
+    timer.add(2500, end_intro, this);
+    timer.start();
+
+}
+
+function end_intro() {
+    intro = false;
+    text.destroy();
+}
+
 function start() {
     game.input.addMoveCallback(paint, this);
     game.input.onDown.add(onDown, this);
@@ -104,26 +150,28 @@ function start() {
 }
 
 function paint(pointer, x, y) {
-    if (pointer.isDown && !injured) {
-        if (!released && (Math.abs(last_x - x) + 1 > x_thresh || Math.abs(last_y - y) + 1 > y_thresh)) {
-            console.log('ouch');
-            set_injury(x, y);
-        }
-        
-        for(var i = 0; i < 30; i++) {
-            for(var j = 0; j < 10; j++) {
-                if (beard.getPixel32(x +i, y+j) != 0) {
-                    beard.setPixel32(x + i, y + j, 0, 0, 0, 0, false);
-                }
+    if (intro || !pointer.isDown || injured) {
+        return;
+    }
+
+    if (!released && (Math.abs(last_x - x) + 1 > x_thresh || Math.abs(last_y - y) + 1 > y_thresh)) {
+        console.log('ouch');
+        set_injury(x, y);
+    }
+
+    for(var i = 0; i < 30; i++) {
+        for(var j = 0; j < 10; j++) {
+            if (beard.getPixel32(x +i, y+j) != 0) {
+                beard.setPixel32(x + i, y + j, 0, 0, 0, 0, false);
             }
         }
-        beard.setPixel32(x + i, y + j, 0, 0, 0, 0, true);
-        beard.update();
-
-        last_x = x;
-        last_y = y;
-        released = false;        
     }
+    beard.setPixel32(x + i, y + j, 0, 0, 0, 0, true);
+    beard.update();
+
+    last_x = x;
+    last_y = y;
+    released = false;
 }
 
 function set_injury(x, y) {
@@ -154,12 +202,18 @@ function getRandom(min, max) {
 }
 
 function onDown(pointer) {
+    if (intro) {
+        return;
+    }
     sound = getRandom(0, shaves.length);
     shaves[sound].play();
     console.log('sound');
 }
 
 function onUp(pointer) {
+    if (intro) {
+        return;
+    }
     shaves[sound].stop();
     released = true;
 }
