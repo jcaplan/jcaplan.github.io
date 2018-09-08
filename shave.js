@@ -1,5 +1,7 @@
-var width = 800;
-var height = 600;
+const width = 800;
+const height = 600;
+const default_x = 6;
+const default_y = 9
 
 var game = new Phaser.Game(width, height, Phaser.CANVAS, 'phaser-example', { preload: preload, create: create, update: update });
 var shave_names = [];
@@ -95,16 +97,9 @@ function create() {
     ouch = game.add.audio('ouch');
     cheer = game.add.audio('cheer');
 
-    if (game.device.iOS) {
-        x_thresh = 10;
-        y_thresh = 15;
-    } else {
-        x_thresh = 6;
-        y_thresh = 9;
-    }
-
     timer = game.time.create(false);
 
+    check_orientation()
 }
 
 function createText(msg, delay=true) {
@@ -151,10 +146,23 @@ function start() {
     game.canvas.style.cursor ="url('assets/blade.png'), auto";
 }
 
+function check_orientation() {
+    if (navigator.userAgent.includes('iPhone') ||
+        navigator.userAgent.includes('Android')) {
+        x_thresh = default_x * 1.3;
+        y_thresh = default_y * 1.3;
+    } else {
+        x_thresh = default_x;
+        y_thresh = default_y;
+    }
+}
+
 function paint(pointer, x, y) {
     if (intro || !pointer.isDown || injured) {
         return;
     }
+    x = Math.floor(x);
+    y = Math.floor(y);
 
     if (!released && (Math.abs(last_x - x) + 1 > x_thresh || Math.abs(last_y - y) + 1 > y_thresh)) {
         set_injury(x, y);
