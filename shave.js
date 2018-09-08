@@ -10,7 +10,8 @@ WebFontConfig = {
     //  'active' means all requested fonts have finished loading
     //  We set a 1 second delay before calling 'createText'.
     //  For some reason if we don't the browser cannot render the text the first time it's created.
-    active: function() { game.time.events.add(Phaser.Timer.SECOND, createText, this); },
+    active: function() { game.time.events.add(Phaser.Timer.SECOND, createText, this,
+        "Please help\nme shave!!" ); },
 
     //  The Google Fonts we want to load (specify as many as you like in the array)
     google: {
@@ -48,6 +49,7 @@ function preload() {
     }
     game.load.audio('polka', 'assets/audio/polka.mp3');
     game.load.audio('ouch', 'assets/audio/ouch.mp3');
+    game.load.audio('cheer', 'assets/audio/cheer.mp3');
 
 }
 
@@ -66,6 +68,7 @@ var sheet_dirty = false;
 var x_thresh;
 var y_thresh;
 var intro = true;
+var cheer;
 
 function create() {
 
@@ -94,6 +97,7 @@ function create() {
     }
     music = game.add.audio('polka');
     ouch = game.add.audio('ouch');
+    cheer = game.add.audio('cheer');
 
     if (game.device.iOS) {
         x_thresh = 10;
@@ -110,9 +114,9 @@ function create() {
 
 }
 
-function createText() {
+function createText(msg, delay=true) {
 
-    text = game.add.text(game.world.centerX, game.world.centerY, "Please help\nme shave!!");
+    text = game.add.text(game.world.centerX, game.world.centerY, msg);
     text.anchor.setTo(0.5);
 
     text.font = 'Fontdiner Swanky';
@@ -132,8 +136,10 @@ function createText() {
     text.strokeThickness = 2;
     text.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
 
-    timer.add(2500, end_intro, this);
-    timer.start();
+    if (delay) {
+        timer.add(2500, end_intro, this);
+        timer.start();
+    }
 
 }
 
@@ -155,7 +161,6 @@ function paint(pointer, x, y) {
     }
 
     if (!released && (Math.abs(last_x - x) + 1 > x_thresh || Math.abs(last_y - y) + 1 > y_thresh)) {
-        console.log('ouch');
         set_injury(x, y);
     }
 
@@ -207,7 +212,6 @@ function onDown(pointer) {
     }
     sound = getRandom(0, shaves.length);
     shaves[sound].play();
-    console.log('sound');
 }
 
 function onUp(pointer) {
@@ -217,6 +221,8 @@ function onUp(pointer) {
     shaves[sound].stop();
     released = true;
 }
+
+var done = false;
 
 function update () {
     bmd.copy('chair');
@@ -230,5 +236,22 @@ function update () {
     }
     if (sheet_dirty) {
         bmd.copy('blood_body');
+    }
+
+    var pixels = 0;
+    for (var i = 0; i < width; i++) {
+        for (var j = 0; j < height; j++) {
+            if (beard.getPixel32(i, j) > 0) {
+                pixels++;
+            }
+        }
+    }
+
+    if (!done && pixels < 500) {
+        intro = true;
+        createText('Thank You!!!!', false);
+        music.stop();
+        cheer.play();
+        done = true;
     }
 }
