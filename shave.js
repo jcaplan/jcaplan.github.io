@@ -184,7 +184,7 @@ function paint(pointer, x, y) {
 }
 
 function set_injury(x, y) {
-    injured = true;
+    blood = ''
     if (beard_left.getPixel32(x, y) != 0) {
         blood = 'blood_left';
     } else if (beard_right.getPixel32(x, y) != 0) {
@@ -194,8 +194,12 @@ function set_injury(x, y) {
     } else if (beard_bottom.getPixel32(x, y) != 0) {
         blood = 'blood_bottom';
         sheet_dirty = true;
-
     }
+    if (blood === '') {
+        return;
+    }
+
+    injured = true;
     timer.add(1000, recover, this);
     timer.start();
     shaves[sound].stop();
