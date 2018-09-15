@@ -9,6 +9,12 @@ var game;
 var injured = false;
 var injury_count = 5;
 var score = 0;
+var offset;
+
+function getTime() {
+    return Math.floor(this.game.time.totalElapsedSeconds() - offset);
+}
+
 
 WebFontConfig = {
     google: {
@@ -91,12 +97,36 @@ function createText(msg) {
 var start = {
     preload: () => {
         game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
+        game.load.image('start', 'assets/start.png');
+        game.load.image('background', 'assets/background.png');
+    },
 
+    create: () => {
+
+        console.log('create start')
+        bmd = game.make.bitmapData(width, height);
+        bmd.copy('background');
+        bmd.addToWorld();
+
+        button = game.add.button(0, 0, 'start', () => {game.state.start('intro')}, this);
+        button.input.useHandCursor = false;
+    }
+}
+
+
+function end_intro() {
+    text.destroy();
+    game.state.start('play')
+}
+
+
+var intro = {
+    preload: () => {
+        game.load.image('play_again', 'assets/play_again.png');
         game.load.image('lose_face', 'assets/lose_face.png');
         game.load.image('lose', 'assets/lose.png');
-        game.load.image('start', 'assets/start.png');
+
         game.load.image('win', 'assets/win.png');
-        game.load.image('background', 'assets/background.png');
         game.load.image('chair', 'assets/chair.png');
         game.load.image('body', 'assets/body.png');
         game.load.image('beard', 'assets/beard.png');
@@ -124,12 +154,9 @@ var start = {
         game.load.audio('ouch', 'assets/audio/ouch.mp3');
         game.load.audio('cheer', 'assets/audio/cheer.mp3');
         game.load.audio('boo', 'assets/audio/boo.mp3');
-
     },
 
     create: () => {
-
-        console.log('create start')
         bmd = game.make.bitmapData(width, height);
         beard = game.make.bitmapData(width, height);
         beard.copy('beard');
@@ -146,12 +173,6 @@ var start = {
         beard_right.update();
         beard_top.update();
         beard_bottom.update();
-
-        bmd.copy('background');
-        bmd.addToWorld();
-
-
-
         for (var i = 0; i < shave_names.length; i++) {
             shaves.push(game.add.audio(shave_names[i]));
         }
@@ -162,20 +183,7 @@ var start = {
 
         check_orientation()
 
-        button = game.add.button(0, 0, 'start', () => {game.state.start('intro')}, this);
-        button.input.useHandCursor = false;
-    }
-}
 
-
-function end_intro() {
-    text.destroy();
-    game.state.start('play')
-}
-
-
-var intro = {
-    create: () => {
         console.log('create intro')
         music.loopFull(0.05);
         button.destroy();
@@ -183,6 +191,9 @@ var intro = {
         timer = game.time.create(true);
         timer.add(3500, end_intro, this);
         timer.start();
+        injured = false;
+        released = true;
+        injury_count = 5;
     }
 }
 
@@ -215,12 +226,13 @@ function paint(pointer, x, y) {
 }
 
 
-var offset;
 var play = {
 
     create: () => {
-        offset = this.game.time.totalElapsedSeconds();
+        offset = this.game.time.totalElapsedSeconds() ;
         console.log('create play')
+        beard.copy('beard');
+        beard.update();
         game.input.addMoveCallback(paint, this);
         game.input.onDown.add(onDown, this);
         game.input.onUp.add(onUp, this)
@@ -263,7 +275,7 @@ var play = {
     },
 
     render: () => {
-        game.debug.text(this.game.time.totalElapsedSeconds() - offset, 32, 32, 'black');
+        game.debug.text(getTime(), 32, 32, 'black');
         game.debug.text(injury_count, 32, 50, 'black');
     }
 }
@@ -311,7 +323,10 @@ var win = {
         bmd.copy('eyes');
         bmd.copy('win')
         bmd.addToWorld();
-        createText(this.game.time.totalElapsedSeconds());
+        createText(getTime());
+        timer = game.time.create(true);
+        timer.add(5000, () => {game.state.start('again')}, this);
+        timer.start();
     }
 }
 
@@ -327,6 +342,24 @@ var lose = {
         bmd.copy(beard);
         bmd.copy('lose')
         bmd.addToWorld();
+        timer = game.time.create(true);
+        timer.add(5000, () => {game.state.start('again')
+        }, this);
+        timer.start();
+    }
+}
+
+var again = {
+    create: () => {
+        console.log('create again')
+        bmd.copy('background');
+        bmd.addToWorld();
+        button = game.add.button(0, 0, 'play_again', () => {
+            boo.stop();
+            cheer.stop();
+            game.state.start('intro')
+        }, this);
+        button.input.useHandCursor = false;
     }
 }
 
@@ -337,6 +370,7 @@ game.state.add('intro', intro);
 game.state.add('play', play);
 game.state.add('win', win);
 game.state.add('lose', lose);
+game.state.add('again', again);
 
 game.state.start('start');
 
