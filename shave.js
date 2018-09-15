@@ -277,8 +277,8 @@ var play = {
     },
 
     render: () => {
-        game.debug.text(getTime(), 32, 32, 'black');
-        game.debug.text(injury_count, 32, 50, 'black');
+        game.debug.text(`time: ${getTime()}`, 32, 32, 'black');
+        game.debug.text(`chances: ${injury_count}`, 32, 50, 'black');
     }
 }
 
@@ -325,7 +325,7 @@ var win = {
         bmd.copy('eyes');
         bmd.copy('win')
         bmd.addToWorld();
-        createText(getTime());
+        createText(`Your time:\n${getTime()}s!`);
         timer = game.time.create(true);
         timer.add(5000, () => {game.state.start('again')}, this);
         timer.start();
