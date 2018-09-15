@@ -122,6 +122,7 @@ function end_intro() {
 
 var intro = {
     preload: () => {
+        createText("Loading...");
         game.load.image('play_again', 'assets/play_again.png');
         game.load.image('lose_face', 'assets/lose_face.png');
         game.load.image('lose', 'assets/lose.png');
@@ -187,6 +188,7 @@ var intro = {
         console.log('create intro')
         music.loopFull(0.05);
         button.destroy();
+        text.destroy();
         createText("Please help\nme shave!!");
         timer = game.time.create(true);
         timer.add(3500, end_intro, this);
