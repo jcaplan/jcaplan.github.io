@@ -6,6 +6,9 @@ const default_y = 9
 var shave_names = [];
 var shaves = [];
 var game;
+var injured = false;
+var injury_count = 5;
+var score = 0;
 
 WebFontConfig = {
     google: {
@@ -23,11 +26,6 @@ function check_orientation() {
         x_thresh = default_x;
         y_thresh = default_y;
     }
-}
-
-
-function recover() {
-    game.state.start('play')
 }
 
 
@@ -61,6 +59,7 @@ var sheet_dirty = false;
 var x_thresh;
 var y_thresh;
 var cheer;
+var boo;
 var button;
 
 
@@ -93,6 +92,8 @@ var start = {
     preload: () => {
         game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
 
+        game.load.image('lose_face', 'assets/lose_face.png');
+        game.load.image('lose', 'assets/lose.png');
         game.load.image('start', 'assets/start.png');
         game.load.image('win', 'assets/win.png');
         game.load.image('background', 'assets/background.png');
@@ -122,6 +123,7 @@ var start = {
         game.load.audio('polka', 'assets/audio/polka.mp3');
         game.load.audio('ouch', 'assets/audio/ouch.mp3');
         game.load.audio('cheer', 'assets/audio/cheer.mp3');
+        game.load.audio('boo', 'assets/audio/boo.mp3');
 
     },
 
@@ -156,6 +158,7 @@ var start = {
         music = game.add.audio('polka');
         ouch = game.add.audio('ouch');
         cheer = game.add.audio('cheer');
+        boo = game.add.audio('boo');
 
         check_orientation()
 
@@ -185,7 +188,7 @@ var intro = {
 
 
 function paint(pointer, x, y) {
-    if (!pointer.isDown) {
+    if (!pointer.isDown || injured) {
         return;
     }
     x = Math.floor(x);
@@ -193,11 +196,8 @@ function paint(pointer, x, y) {
 
     if (!released
         && (Math.abs(last_x - x) + 1 > x_thresh || Math.abs(last_y - y) + 1 > y_thresh)
-        && (beard.getPixel(x, y).a != 0)
     ) {
-            game.state.start('injured');
-            return;
-        }
+        set_injury(x, y);
     }
 
     for(var i = 0; i < 30; i++) {
@@ -215,9 +215,11 @@ function paint(pointer, x, y) {
 }
 
 
+var offset;
 var play = {
 
     create: () => {
+        offset = this.game.time.totalElapsedSeconds();
         console.log('create play')
         game.input.addMoveCallback(paint, this);
         game.input.onDown.add(onDown, this);
@@ -232,13 +234,16 @@ var play = {
         bmd.copy('chair');
         bmd.copy('body');
         bmd.copy(beard);
-        bmd.copy('eyes');
+        if (injured) {
+            bmd.copy('eyes_hurt');
+            bmd.copy(blood);
+        } else {
+            bmd.copy('eyes');
+        }
 
         if (sheet_dirty) {
             bmd.copy('blood_body');
         }
-
-        bmd.addToWorld();
 
         var pixels = 0;
         for (var i = 0; i < width; i++) {
@@ -251,51 +256,47 @@ var play = {
 
         if (pixels < 500) {
             game.state.start('win')
+        } else {
+            console.log(pixels);
         }
+
+    },
+
+    render: () => {
+        game.debug.text(this.game.time.totalElapsedSeconds() - offset, 32, 32, 'black');
+        game.debug.text(injury_count, 32, 50, 'black');
     }
 }
 
 
-var injured = {
-    create: () => {
-        console.log('create injured')
-        game.canvas.style.cursor ="url('assets/blade.png'), auto";
-        blood = ''
-        let x = game.input.activePointer.x;
-        let y = game.input.activePointer.y;
+function set_injury(x, y) {
+    console.log('create injured')
+    blood = ''
 
-        bmd.copy('background');
-        bmd.copy('chair');
-        bmd.copy('body');
-        bmd.copy(beard);
-        bmd.copy('eyes_hurt');
-
-        if (beard_left.getPixel32(x, y) != 0) {
-            blood = 'blood_left';
-        } else if (beard_right.getPixel32(x, y) != 0) {
-            blood = 'blood_right';
-        } else if (beard_top.getPixel32(x, y) != 0) {
-            blood = 'blood_top';
-        } else if (beard_bottom.getPixel32(x, y) != 0) {
-            blood = 'blood_bottom';
-            sheet_dirty = true;
-        }
-
-        if (sheet_dirty) {
-            bmd.copy('blood_body');
-        }
-
-
-        bmd.copy(blood);
-        bmd.addToWorld();
-
-        timer = game.time.create(true);
-        timer.add(1000, recover, this);
-        timer.start();
-        shaves[sound].stop();
-        ouch.play('', 0, 0.2);
-        released = true;
+    if (beard_left.getPixel32(x, y) != 0) {
+        blood = 'blood_left';
+    } else if (beard_right.getPixel32(x, y) != 0) {
+        blood = 'blood_right';
+    } else if (beard_top.getPixel32(x, y) != 0) {
+        blood = 'blood_top';
+    } else if (beard_bottom.getPixel32(x, y) != 0) {
+        blood = 'blood_bottom';
+        sheet_dirty = true;
     }
+
+    if (blood === '') {
+        return;
+    }
+
+    injured = true;
+    if (--injury_count == 0) {
+        game.state.start('lose');
+    }
+    timer = game.time.create(true);
+    timer.add(1000, () => {injured = false}, this);
+    timer.start();
+    shaves[sound].stop();
+    ouch.play('', 0, 0.2);
 }
 
 var win = {
@@ -310,18 +311,32 @@ var win = {
         bmd.copy('eyes');
         bmd.copy('win')
         bmd.addToWorld();
+        createText(this.game.time.totalElapsedSeconds());
     }
 }
 
+
+var lose = {
+    create: () => {
+        console.log('create lose')
+        music.stop();
+        boo.play('', 0, 0.2);
+        bmd.copy('background');
+        bmd.copy('chair');
+        bmd.copy('lose_face');
+        bmd.copy(beard);
+        bmd.copy('lose')
+        bmd.addToWorld();
+    }
+}
 
 game = new Phaser.Game(width, height, Phaser.CANVAS, 'shaving');
 
 game.state.add('start', start);
 game.state.add('intro', intro);
 game.state.add('play', play);
-game.state.add('injured', injured);
 game.state.add('win', win);
-//game.state.add('lose', lose);
+game.state.add('lose', lose);
 
 game.state.start('start');
 
