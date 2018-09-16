@@ -26,8 +26,8 @@ WebFontConfig = {
 function check_orientation() {
     if (navigator.userAgent.includes('iPhone') ||
         navigator.userAgent.includes('Android')) {
-        x_thresh = default_x * 1.3;
-        y_thresh = default_y * 1.3;
+        x_thresh = default_x * 1.8;
+        y_thresh = default_y * 1.8;
     } else {
         x_thresh = default_x;
         y_thresh = default_y;
