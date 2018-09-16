@@ -102,8 +102,6 @@ var start = {
     },
 
     create: () => {
-
-        console.log('create start')
         bmd = game.make.bitmapData(width, height);
         bmd.copy('background');
         bmd.addToWorld();
@@ -185,7 +183,6 @@ var intro = {
         check_orientation()
 
 
-        console.log('create intro')
         music.loopFull(0.05);
         button.destroy();
         text.destroy();
@@ -201,6 +198,7 @@ var intro = {
 
 
 function paint(pointer, x, y) {
+    console.log(pointer.speed);
     if (!pointer.isDown || injured) {
         return;
     }
@@ -232,7 +230,6 @@ var play = {
 
     create: () => {
         offset = this.game.time.totalElapsedSeconds() ;
-        console.log('create play')
         beard.copy('beard');
         beard.update();
         game.input.addMoveCallback(paint, this);
@@ -270,10 +267,7 @@ var play = {
 
         if (pixels < 500) {
             game.state.start('win')
-        } else {
-            console.log(pixels);
         }
-
     },
 
     render: () => {
@@ -284,7 +278,6 @@ var play = {
 
 
 function set_injury(x, y) {
-    console.log('create injured')
     blood = ''
 
     if (beard_left.getPixel32(x, y) != 0) {
@@ -315,7 +308,6 @@ function set_injury(x, y) {
 
 var win = {
     create: () => {
-        console.log('create win')
         music.stop();
         cheer.play();
         bmd.copy('background');
@@ -335,7 +327,6 @@ var win = {
 
 var lose = {
     create: () => {
-        console.log('create lose')
         music.stop();
         boo.play('', 0, 0.2);
         bmd.copy('background');
@@ -353,7 +344,6 @@ var lose = {
 
 var again = {
     create: () => {
-        console.log('create again')
         bmd.copy('background');
         bmd.addToWorld();
         button = game.add.button(0, 0, 'play_again', () => {
