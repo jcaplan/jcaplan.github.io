@@ -192,6 +192,7 @@ var intro = {
         timer.start();
         injured = false;
         released = true;
+        sheet_dirty = false;
         injury_count = 5;
     }
 }
@@ -316,6 +317,9 @@ var win = {
         bmd.copy(beard);
         bmd.copy('eyes');
         bmd.copy('win')
+        if (sheet_dirty) {
+            bmd.copy('blood_body');
+        }
         bmd.addToWorld();
         createText(`Your time:\n${getTime()}s!`);
         timer = game.time.create(true);
@@ -332,6 +336,9 @@ var lose = {
         bmd.copy('background');
         bmd.copy('chair');
         bmd.copy('lose_face');
+        if (sheet_dirty) {
+            bmd.copy('blood_body');
+        }
         bmd.copy(beard);
         bmd.copy('lose')
         bmd.addToWorld();
